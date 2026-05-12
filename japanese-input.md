@@ -25,10 +25,10 @@ EOF
 source ~/.bashrc
 
 # 3. 起動
-dbus-launch fcitx5 -d &
+dbus-launch fcitx5 -d > /dev/null 2>&1 &
 
-# 4. 永続化（ログ非表示）
-echo 'dbus-launch fcitx5 -d > /dev/null 2>&1 &' >> ~/.bashrc
+# 4. 永続化（ログ・通知非表示）
+echo '(pgrep -x fcitx5 > /dev/null 2>&1 || dbus-launch fcitx5 -d > /dev/null 2>&1) &' >> ~/.bashrc
 ```
 
 その後 `fcitx5-configtool` でMozcを追加して完了。
@@ -164,27 +164,35 @@ firefox &       # ターミナルから再起動
 ## 7. 永続化（再起動後も自動起動）
 
 ```bash
-echo 'dbus-launch fcitx5 -d > /dev/null 2>&1 &' >> ~/.bashrc
+echo '(pgrep -x fcitx5 > /dev/null 2>&1 || dbus-launch fcitx5 -d > /dev/null 2>&1) &' >> ~/.bashrc
 ```
 
-次回ターミナル起動時に自動でfcitx5が立ち上がる。  
-`> /dev/null 2>&1` でログを捨てているのでターミナルが汚れない。
-
-### ⚠️ すでに `dbus-launch fcitx5 -d &` を追加済みの場合
-
-ログが垂れ流しになるので以下で修正する。
-
-```bash
-sed -i 's|dbus-launch fcitx5 -d &|dbus-launch fcitx5 -d > /dev/null 2>\&1 \&|' ~/.bashrc
-source ~/.bashrc
-```
+- `pgrep` で起動済みか確認し、未起動のときだけ起動する
+- `> /dev/null 2>&1` でログを捨てる
+- `( ) &` で囲むことでバックグラウンドジョブの完了通知も非表示になる
 
 確認：
 
 ```bash
 grep fcitx5 ~/.bashrc
-# → dbus-launch fcitx5 -d > /dev/null 2>&1 &
+# → (pgrep -x fcitx5 > /dev/null 2>&1 || dbus-launch fcitx5 -d > /dev/null 2>&1) &
 ```
+
+### ⚠️ すでに古い行を追加済みの場合
+
+nanoで直接編集する。
+
+```bash
+nano ~/.bashrc
+```
+
+一番下の fcitx5 関連行を削除して以下に書き換える：
+
+```bash
+(pgrep -x fcitx5 > /dev/null 2>&1 || dbus-launch fcitx5 -d > /dev/null 2>&1) &
+```
+
+保存: `Ctrl + O` → `Enter` → `Ctrl + X`
 
 ---
 
@@ -197,7 +205,7 @@ grep fcitx5 ~/.bashrc
 | Mozcが候補に出ない | "Only Show Current Language" ON | チェックを外してから検索 |
 | geditでは動くがブラウザで動かない | 環境変数未引き継ぎ | ターミナルからブラウザを起動 |
 | `XDG_RUNTIME_DIR not set` エラー | Wayland未接続（警告） | 無視してOK（X11で動作する） |
-| fcitx5を再起動したい | 設定が反映されない | `pkill fcitx5 && dbus-launch fcitx5 -d &` |
+| fcitx5を再起動したい | 設定が反映されない | `pkill fcitx5 && dbus-launch fcitx5 -d > /dev/null 2>&1 &` |
 
 ---
 
@@ -223,8 +231,8 @@ ENV GTK_IM_MODULE=fcitx \
     DefaultIMModule=fcitx \
     DISPLAY=:5
 
-# fcitx5 自動起動を bashrc に追加
-RUN echo 'dbus-launch fcitx5 -d &' >> /root/.bashrc
+# fcitx5 自動起動を bashrc に追加（ログ・通知非表示）
+RUN echo '(pgrep -x fcitx5 > /dev/null 2>&1 || dbus-launch fcitx5 -d > /dev/null 2>&1) &' >> /root/.bashrc
 ```
 
 ### ⚠️ 注意点
