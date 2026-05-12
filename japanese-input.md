@@ -27,8 +27,8 @@ source ~/.bashrc
 # 3. 起動
 dbus-launch fcitx5 -d &
 
-# 4. 永続化
-echo 'dbus-launch fcitx5 -d &' >> ~/.bashrc
+# 4. 永続化（ログ非表示）
+echo 'dbus-launch fcitx5 -d > /dev/null 2>&1 &' >> ~/.bashrc
 ```
 
 その後 `fcitx5-configtool` でMozcを追加して完了。
@@ -164,10 +164,27 @@ firefox &       # ターミナルから再起動
 ## 7. 永続化（再起動後も自動起動）
 
 ```bash
-echo 'dbus-launch fcitx5 -d &' >> ~/.bashrc
+echo 'dbus-launch fcitx5 -d > /dev/null 2>&1 &' >> ~/.bashrc
 ```
 
-次回ターミナル起動時に自動でfcitx5が立ち上がる。
+次回ターミナル起動時に自動でfcitx5が立ち上がる。  
+`> /dev/null 2>&1` でログを捨てているのでターミナルが汚れない。
+
+### ⚠️ すでに `dbus-launch fcitx5 -d &` を追加済みの場合
+
+ログが垂れ流しになるので以下で修正する。
+
+```bash
+sed -i 's|dbus-launch fcitx5 -d &|dbus-launch fcitx5 -d > /dev/null 2>\&1 \&|' ~/.bashrc
+source ~/.bashrc
+```
+
+確認：
+
+```bash
+grep fcitx5 ~/.bashrc
+# → dbus-launch fcitx5 -d > /dev/null 2>&1 &
+```
 
 ---
 
@@ -182,11 +199,13 @@ echo 'dbus-launch fcitx5 -d &' >> ~/.bashrc
 | `XDG_RUNTIME_DIR not set` エラー | Wayland未接続（警告） | 無視してOK（X11で動作する） |
 | fcitx5を再起動したい | 設定が反映されない | `pkill fcitx5 && dbus-launch fcitx5 -d &` |
 
+---
+
 ## Dockerfile で設定する場合
- 
+
 コンテナを作り直すたびに手動セットアップが不要になる。  
 既存のDockerfileに以下を追記する。
- 
+
 ```dockerfile
 # 日本語入力（fcitx5 + Mozc）
 RUN apt-get update && apt-get install -y \
@@ -196,23 +215,24 @@ RUN apt-get update && apt-get install -y \
     dbus-x11 \
     im-config \
   && rm -rf /var/lib/apt/lists/*
- 
+
 # 環境変数
 ENV GTK_IM_MODULE=fcitx \
     QT_IM_MODULE=fcitx \
     XMODIFIERS=@im=fcitx \
     DefaultIMModule=fcitx \
     DISPLAY=:5
- 
+
 # fcitx5 自動起動を bashrc に追加
 RUN echo 'dbus-launch fcitx5 -d &' >> /root/.bashrc
 ```
- 
+
 ### ⚠️ 注意点
- 
+
 - `fcitx5-configtool` でのMozc追加はGUI操作のためDockerfileでは自動化できない。
 - 初回コンテナ起動後に一度だけ手動で `fcitx5-configtool` を実行してMozcを追加する。
 - Mozc設定は `~/.config/fcitx5/` に保存されるので、volumeマウントしておくと次回以降も引き継げる。
+
 ```yaml
 # docker-compose.yml の場合
 volumes:
