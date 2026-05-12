@@ -181,3 +181,40 @@ echo 'dbus-launch fcitx5 -d &' >> ~/.bashrc
 | geditでは動くがブラウザで動かない | 環境変数未引き継ぎ | ターミナルからブラウザを起動 |
 | `XDG_RUNTIME_DIR not set` エラー | Wayland未接続（警告） | 無視してOK（X11で動作する） |
 | fcitx5を再起動したい | 設定が反映されない | `pkill fcitx5 && dbus-launch fcitx5 -d &` |
+
+## Dockerfile で設定する場合
+ 
+コンテナを作り直すたびに手動セットアップが不要になる。  
+既存のDockerfileに以下を追記する。
+ 
+```dockerfile
+# 日本語入力（fcitx5 + Mozc）
+RUN apt-get update && apt-get install -y \
+    fcitx5 \
+    fcitx5-mozc \
+    fcitx5-config-qt \
+    dbus-x11 \
+    im-config \
+  && rm -rf /var/lib/apt/lists/*
+ 
+# 環境変数
+ENV GTK_IM_MODULE=fcitx \
+    QT_IM_MODULE=fcitx \
+    XMODIFIERS=@im=fcitx \
+    DefaultIMModule=fcitx \
+    DISPLAY=:5
+ 
+# fcitx5 自動起動を bashrc に追加
+RUN echo 'dbus-launch fcitx5 -d &' >> /root/.bashrc
+```
+ 
+### ⚠️ 注意点
+ 
+- `fcitx5-configtool` でのMozc追加はGUI操作のためDockerfileでは自動化できない。
+- 初回コンテナ起動後に一度だけ手動で `fcitx5-configtool` を実行してMozcを追加する。
+- Mozc設定は `~/.config/fcitx5/` に保存されるので、volumeマウントしておくと次回以降も引き継げる。
+```yaml
+# docker-compose.yml の場合
+volumes:
+  - ./fcitx5-config:/root/.config/fcitx5
+```
