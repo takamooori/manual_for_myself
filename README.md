@@ -11,6 +11,7 @@ Ubuntu + ROS2 環境のセットアップ手順をまとめたリポジトリで
 | [gpu-setup.md](./gpu-setup.md) | Docker + NVIDIA GPU 環境構築 |
 | [bag_topic_rename.md](./bag_topic_rename.md) | ROS2 bagファイルのトピック名変更（sqlite3 直接操作） |
 | [japanese-input.md](./japanese-input.md) | Ubuntu 上の日本語入力設定 |
+| [glim dump guide.md](./glim dump guide.md) | glim dumpファイルについて |
 
 ## 動作確認環境
 
