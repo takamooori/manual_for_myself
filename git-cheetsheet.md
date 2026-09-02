@@ -78,8 +78,6 @@ git switch main
 git pull                     # マージ結果を取り込む
 git branch -d feat/xxx       # ローカルブランチ削除
 git fetch --prune            # 消えたリモートブランチの参照を掃除
-git branch -d feat/xxx       # ブランチの削除
-           -D                # 強制
 git push origin --delete feat/xxx  # リモートへの反映
 ```
 
